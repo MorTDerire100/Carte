@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Carte des mobilités</title>
+  <!-- Feuille de style Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Mise en page : sidebar + carte */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+    }
+    #container {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    #sidebar {
+      width: 300px;
+      min-width: 200px;
+      max-width: 400px;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    #map {
+      flex: 1;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    .student-item {
+      margin-bottom: 8px;
+      cursor: pointer;
+      padding: 6px;
+      border: 1px solid #eee;
+      border-radius: 4px;
+    }
+    .student-item:hover {
+      background-color: #f0f0f0;
+    }
+    .bw-animate {
+  filter: grayscale(0%);
+  transition: filter 2s ease-in-out;
+    }
+    .bw-animate.bw-active {
+    filter: grayscale(100%);
+    }   
+  </style>
+</head>
+
+<body>
+  <div id="container">
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <h1>Carte des élèves</h1>
+      <div id="student-list"></div>
+    </div>
+    <!-- CARTE -->
+    <div id="map"></div>
+  </div>
+
+  <!-- Scripts Leaflet -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // === 1) Données des élèves ===
+    // Place ici toutes les infos (nom, ville, coordonnées GPS, photo, description, etc.)
+    const students = [
+      {
+        name: "Thomas",
+        coords: [37.04390331027527, -7.971833235811672], // Tokyo
+        photo: "photos/Thomas.jpg",
+        details: "A dépensé 7850€ pour être ici et a posé sa convention trop tard pour avoir les aides"
+      },
+      {
+        name: "Thibault",
+        coords: [12.9620, 77.5698], // Paris
+        photo: "photos/Thibaut.png",
+        details: "Va se faire voler ses reins de blanc pour qu'ils soient revendu au marché noir indien pour 150000 rupies"
+      },
+      {
+        name: "Gabriel",
+        coords: [40.4168, -3.7038], // Madrid
+        photo: "photos/Gabriel.png",
+        details: "Mort renversé par une Dacia Sandero 2015 le 16 mai 2025"
+      }
+      // ... Ajoute autant d'élèves que nécessaire
+    ];
+
+    // === 2) Initialisation de la carte Leaflet ===
+    const map = L.map('map').setView([20, 0], 2); 
+    // Tu peux ajuster la vue initiale : [latitude, longitude], niveau de zoom
+
+    // Tuiles OpenStreetMap (ou autre provider)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // On stockera ici les marqueurs pour pouvoir les manipuler
+    const markers = [];
+
+    // === 3) Création des marqueurs + construction de la sidebar ===
+    const studentListDiv = document.getElementById('student-list');
+
+    students.forEach((student, index) => {
+      // a) Création du marqueur
+      const isGabriel = student.name === 'Gabriel';
+      const marker = L.marker(student.coords).addTo(map)
+    .bindPopup(`
+        <b>${student.name}</b><br/>
+        <img 
+        src="${student.photo}" 
+        class="${isGabriel ? 'bw-animate' : ''}" 
+        id="photo-${index}"
+        style="width: 150px; border-radius: 6px; margin: 5px 0;" 
+        alt="${student.name}"><br/>
+        ${student.details}
+    `);
+
+      // On garde une référence pour l’ouvrir/fermer quand on clique dans la sidebar
+      markers.push(marker);
+
+      // b) Construction de l'élément dans la sidebar
+      const studentItem = document.createElement('div');
+      studentItem.className = 'student-item';
+      studentItem.innerHTML = `<strong>${student.name}</strong>`;
+      
+      // Quand on clique sur le nom dans la sidebar :
+      studentItem.addEventListener('click', () => {
+        // on déplace la carte vers l'élève (zoom 10 par exemple, à ajuster)
+        map.flyTo(student.coords, 10);
+
+        // petite temporisation pour être sûr d'avoir le bon zoom avant d'ouvrir la popup
+        setTimeout(() => {
+  marker.openPopup();
+
+  // Animation uniquement pour Gabriel
+  if (student.name === "Gabriel") {
+    setTimeout(() => {
+      const photo = document.getElementById("photo-" + index);
+      if (photo) {
+        photo.classList.add("bw-active");
+      }
+    }, 300); // Attends que la popup soit bien visible
+  }
+}, 800);
+
+      });
+
+      studentListDiv.appendChild(studentItem);
+    });
+  </script>
+</body>
+</html>
